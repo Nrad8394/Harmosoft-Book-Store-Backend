@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: hbs_db
+      MYSQL_USER: hbs_user
+      MYSQL_PASSWORD: hbs_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend-network
+
+  django:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - static_volume:/app/static  # Mount volume for static files
+      - media_volume:/app/media    # Mount volume for media files
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py makemigrations && python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --workers 3 --bind 0.0.0.0:8000 hbs.wsgi:application"
+    networks:
+      - backend-network
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - static_volume:/app/static  # Serve static files
+      - media_volume:/app/media    # Serve media files
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+    networks:
+      - backend-network
+
+  ftp:
+    image: fauria/vsftpd
+    environment:
+      - FTP_USER=user  # Your FTP username
+      - FTP_PASS=password  # Your FTP password
+      - PASV_ADDRESS=127.0.0.1  # You can replace with your server's IP or domain name
+      - PASV_MIN_PORT=21100
+      - PASV_MAX_PORT=21110
+      - FILE_OPEN_MODE=0666
+      - LOCAL_UMASK=022
+    ports:
+      - "20:20"
+      - "21:21"
+      - "21100-21110:21100-21110"  # FTP passive ports
+    volumes:
+      - static_volume:/home/vsftpd/static  # Map static files to FTP
+      - media_volume:/home/vsftpd/media    # Map media files to FTP
+    networks:
+      - backend-network
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:
+
+networks:
+  backend-network:

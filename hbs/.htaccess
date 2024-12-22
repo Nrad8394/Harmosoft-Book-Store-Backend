@@ -1,0 +1,40 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/harmoso1/repositories/Harmosoft-Book-Store-Backend/hbs"
+PassengerBaseURI "/"
+PassengerPython "/home/harmoso1/virtualenv/repositories/Harmosoft-Book-Store-Backend/hbs/3.11/bin/python"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Ensure directory listings are disabled
+  Options -Indexes
+  # Allow access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Rewrite requests without a file extension to .html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^([^/]+)$ $1.html [L]
+  # Serve the requested .html file directly
+  RewriteRule ^(.*)\.html$ $1.html [L]
+  # Custom error pages
+  ErrorDocument 403 /403.html
+  ErrorDocument 404 /404.html
+</IfModule>
+# Passenger Configuration
+<IfModule mod_passenger.c>
+  PassengerEnabled on
+  PassengerAppRoot "/home/harmoso1/repositories/Harmosoft-Book-Store-Backend/hbs"
+  PassengerBaseURI "/"
+  
+  # Define the path to the WSGI file
+  PassengerStartupFile passenger_wsgi.py
+  
+  # Specify Python environment
+  PassengerPython "/home/harmoso1/virtualenv/repositories/Harmosoft-Book-Store-Backend/hbs/3.11/bin/python"
+  
+  # Optional: Passenger performance and pool settings (if allowed)
+  PassengerMaxPoolSize 6
+  PassengerPoolIdleTime 300
+  PassengerMaxRequests 1000
+</IfModule>
+# CloudLinux Environment Variables Configuration
